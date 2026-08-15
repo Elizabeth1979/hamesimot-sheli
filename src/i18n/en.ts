@@ -23,6 +23,7 @@ export const en: Dictionary = {
     optional: 'Optional',
     required: 'Required',
     none: 'None',
+    allChildren: 'All children',
     search: 'Search',
     emoji: 'Emoji',
     color: 'Colour',

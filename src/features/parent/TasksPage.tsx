@@ -35,7 +35,7 @@ export function TasksPage() {
             value={childFilter}
             onChange={setChildFilter}
             options={[
-              { value: 'all', label: t.common.none },
+              { value: 'all', label: t.common.allChildren },
               ...children.map((child) => ({ value: child.id, label: child.name })),
             ]}
           />

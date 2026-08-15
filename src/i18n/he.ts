@@ -22,6 +22,7 @@ export const he = {
     optional: 'לא חובה',
     required: 'שדה חובה',
     none: 'אין',
+    allChildren: 'כל הילדים',
     search: 'חיפוש',
     emoji: 'אימוג׳י',
     color: 'צבע',
