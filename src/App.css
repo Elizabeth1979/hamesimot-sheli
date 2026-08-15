@@ -163,6 +163,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  border: 0;
+  background: transparent;
 }
 
 .tabbar__item.is-active {

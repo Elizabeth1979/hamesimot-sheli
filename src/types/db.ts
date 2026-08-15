@@ -26,6 +26,7 @@ export type TimeSlot = Enums<'time_slot'>
 export type CompletionStatus = Enums<'completion_status'>
 export type RedemptionStatus = Enums<'redemption_status'>
 export type MemberRole = Enums<'member_role'>
+export type AccountType = Enums<'account_type'>
 
 export const TIME_SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening']
 export const TASK_TYPES: TaskType[] = ['check', 'checklist', 'timer', 'sport']

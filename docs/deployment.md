@@ -31,6 +31,8 @@ order**, one at a time:
 | `0004_function_grants.sql` | Execute grants for the RPCs |
 | `0005_push_hooks.sql` | pg_net / pg_cron plumbing and notification triggers |
 | `0006_fk_indexes.sql` | Covering indexes used by cascade deletes |
+| `0007_sport_reps.sql` | Repetition-based sport tasks and constraints |
+| `20260815164345_child_email_login.sql` | Optional child identities and child-scoped RLS policies |
 
 If you have the Supabase CLI linked to the project, `supabase db push` does the
 same thing in one step.
@@ -39,14 +41,17 @@ same thing in one step.
 
 ```bash
 supabase functions deploy delete-account
+supabase functions deploy manage-child-login
 supabase functions deploy notify-events
 supabase functions deploy send-reminders
 ```
 
-All three should keep `verify_jwt` enabled (the default).
+All four should keep `verify_jwt` enabled (the default).
 
-- `delete-account` — the only place the service-role key is used; performs the
-  real cascade deletion of a family and its parent accounts.
+- `delete-account` — performs the real cascade deletion of a family and all
+  linked parent and child accounts.
+- `manage-child-login` — lets a signed-in parent create, update or revoke an
+  optional email/password account linked to one child.
 - `notify-events` — called by database triggers to fan out family push events.
 - `send-reminders` — called on a schedule to send the daily slot reminders.
 

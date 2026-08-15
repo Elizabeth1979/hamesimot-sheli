@@ -6,13 +6,17 @@
 npm run lint       # eslint
 npm run typecheck  # tsc
 npm test           # vitest — outbox idempotency and streak calculation
+npm run test:db    # pgTAP — RLS tenant isolation and transactional RPCs
+npm run lint:db    # PostgreSQL function/schema lint
 npm run build      # typecheck + production build
 ```
 
-All four must pass before deploying. The unit tests deliberately cover the two
+All six must pass before deploying. `test:db` and `lint:db` require the local
+Supabase stack (`supabase start`). The tests deliberately cover the
 places where a subtle bug would be invisible in the UI: whether a queued offline
-action can be replayed twice and create a duplicate, and whether streak counting
-handles gaps and week boundaries correctly.
+action can be replayed twice and create a duplicate, whether streak counting
+handles gaps and week boundaries correctly, and whether database tenant boundaries
+hold when a caller submits another family's UUID.
 
 ## Installing the app
 
@@ -67,6 +71,17 @@ this document.
 5. Run the sport task through its sets and rests.
 6. Play the routine and confirm it advances one task at a time.
 7. Check the star balance has increased.
+
+### Child email login
+
+1. In Parent area → Children, edit a child and set an email and an 8+ character password.
+2. In a private browser window, sign in with those credentials and confirm the app opens
+   that child's day directly.
+3. Confirm the child cannot open `/parent`, select a sibling, or see a sibling's tasks,
+   completions or journal.
+4. Complete a task, save a journal entry and request a reward; confirm all three work.
+5. Back in the parent account, change the password and confirm the old password stops working.
+6. Clear the child's email and save; confirm the child account can no longer sign in.
 
 ### Approvals
 
@@ -141,8 +156,8 @@ mid-task. To test, deploy a change and reopen the installed app.
 - iOS push requires the app to be installed to the home screen (16.4+).
 - Nothing can be scheduled locally on the device — reminders that arrive while
   the app is closed come from the server.
-- The parent PIN keeps children out of the parent screens on a shared device. It
-  is not a security boundary; Row Level Security, which isolates one family's
-  data from another's, is.
+- The parent PIN keeps children out of parent screens on a shared parent device. It
+  is not a security boundary; Row Level Security scopes parent accounts to their
+  family and independently signed-in child accounts to one child profile.
 - If two devices complete the same task offline, they converge to a single
   completion rather than duplicating.

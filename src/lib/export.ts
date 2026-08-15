@@ -5,19 +5,7 @@ import { supabase } from './supabase'
  * so this is exactly the data the account can see — nothing more.
  */
 export async function exportFamilyData(): Promise<void> {
-  const [
-    families,
-    profiles,
-    children,
-    routines,
-    tasks,
-    checklistItems,
-    completions,
-    checklistCompletions,
-    rewards,
-    redemptions,
-    journal,
-  ] = await Promise.all([
+  const results = await Promise.all([
     supabase.from('families').select('*'),
     supabase.from('profiles').select('id, display_name, role, created_at'),
     supabase.from('children').select('*'),
@@ -30,6 +18,38 @@ export async function exportFamilyData(): Promise<void> {
     supabase.from('reward_redemptions').select('*'),
     supabase.from('journal_entries').select('*'),
   ])
+
+  const datasetNames = [
+    'families',
+    'profiles',
+    'children',
+    'routines',
+    'tasks',
+    'checklist items',
+    'task completions',
+    'checklist completions',
+    'rewards',
+    'reward redemptions',
+    'journal entries',
+  ]
+  const failedIndex = results.findIndex((result) => result.error)
+  if (failedIndex >= 0) {
+    throw new Error(`Could not export ${datasetNames[failedIndex]}: ${results[failedIndex].error!.message}`)
+  }
+
+  const [
+    families,
+    profiles,
+    children,
+    routines,
+    tasks,
+    checklistItems,
+    completions,
+    checklistCompletions,
+    rewards,
+    redemptions,
+    journal,
+  ] = results
 
   const payload = {
     exportedAt: new Date().toISOString(),

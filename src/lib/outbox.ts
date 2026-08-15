@@ -1,4 +1,4 @@
-import { idbAdd, idbAll, idbClear, idbCount, idbDelete, idbFirst, idbUpdate } from './idb'
+import { idbAdd, idbAll, idbClear, idbCount, idbDelete, idbUpdate } from './idb'
 import { supabase } from './supabase'
 
 /**
@@ -23,6 +23,8 @@ export type OutboxEntry = {
   createdAt: number
   attempts: number
   lastError?: string
+  /** Requires an explicit retry or discard; never silently removed. */
+  deadLetter?: boolean
 }
 
 export type SyncState = {
@@ -52,7 +54,11 @@ export function getSyncState(): SyncState {
 }
 
 async function refreshPendingCount() {
-  publish({ pending: await idbCount() })
+  const entries = await idbAll<OutboxEntry>()
+  publish({
+    pending: entries.length,
+    failed: entries.some((entry) => entry.deadLetter),
+  })
 }
 
 export async function enqueue(op: OutboxOperation): Promise<void> {
@@ -145,8 +151,15 @@ async function runFlush(): Promise<void> {
   try {
     // Strict insertion order: a "remove" queued after an "add" must not overtake it.
     for (;;) {
-      const entry = await idbFirst<OutboxEntry>()
+      const entries = await idbAll<OutboxEntry>()
+      const entry = entries[0]
       if (!entry) break
+      // A permanent failure preserves strict operation order until the user decides
+      // whether to retry it or discard it.
+      if (entry.deadLetter) {
+        sawFailure = true
+        break
+      }
 
       try {
         await applyOperation(entry.op)
@@ -156,10 +169,13 @@ async function runFlush(): Promise<void> {
         const attempts = entry.attempts + 1
 
         if (!isRetryable(error) || attempts >= MAX_ATTEMPTS) {
-          // Drop it rather than wedge every later operation behind a permanent failure.
-          await idbDelete(entry.seq)
+          await idbUpdate<OutboxEntry>(entry.seq, {
+            attempts,
+            lastError: message,
+            deadLetter: true,
+          })
           sawFailure = true
-          continue
+          break
         }
 
         await idbUpdate<OutboxEntry>(entry.seq, { attempts, lastError: message })
@@ -174,7 +190,31 @@ async function runFlush(): Promise<void> {
 }
 
 export async function clearFailedFlag(): Promise<void> {
-  publish({ failed: false })
+  await refreshPendingCount()
+}
+
+export async function retryFailedOperations(): Promise<void> {
+  const entries = await idbAll<OutboxEntry>()
+  for (const entry of entries) {
+    if (entry.deadLetter) {
+      await idbUpdate<OutboxEntry>(entry.seq, {
+        attempts: 0,
+        lastError: undefined,
+        deadLetter: false,
+      })
+    }
+  }
+  await refreshPendingCount()
+  await flushOutbox()
+}
+
+export async function discardFailedOperations(): Promise<void> {
+  const entries = await idbAll<OutboxEntry>()
+  for (const entry of entries) {
+    if (entry.deadLetter) await idbDelete(entry.seq)
+  }
+  await refreshPendingCount()
+  await flushOutbox()
 }
 
 export async function pendingOperations(): Promise<OutboxEntry[]> {

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useChildren } from '@/lib/queries'
 import { useAuth } from '@/app/AuthProvider'
 import { useMode } from '@/app/ModeProvider'
@@ -11,12 +11,16 @@ export function ChildPickerPage() {
   const t = useT()
   const navigate = useNavigate()
   const { selectChild } = useMode()
-  const { session, signOut } = useAuth()
+  const { session, profile, signOut } = useAuth()
   const { data: children, isPending } = useChildren()
 
   function open(childId: string) {
     selectChild(childId)
     void navigate(`/child/${childId}`)
+  }
+
+  if (profile?.account_type === 'child' && profile.child_id) {
+    return <Navigate to={`/child/${profile.child_id}`} replace />
   }
 
   return (

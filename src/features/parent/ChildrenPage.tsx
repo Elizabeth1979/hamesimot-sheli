@@ -5,13 +5,38 @@ import { keys, useChildren } from '@/lib/queries'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/AuthProvider'
 import { useT } from '@/i18n'
-import { Button, Card, EmptyState, Field, Spinner, TextInput } from '@/components/ui'
+import {
+  Banner,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  PasswordInput,
+  Spinner,
+  TextInput,
+} from '@/components/ui'
 import { Avatar, CHILD_COLORS, CHILD_EMOJIS, ColorPicker, EmojiPicker } from '@/components/AvatarPicker'
 import { ConfirmDialog, Modal } from '@/components/Modal'
 import type { Child } from '@/types/db'
 import './parent.css'
 
-type Draft = { id?: string; name: string; emoji: string; color: string }
+type Draft = {
+  id?: string
+  name: string
+  emoji: string
+  color: string
+  loginEmail: string
+  password: string
+  hadLogin: boolean
+}
+
+class CreatedChildLoginError extends Error {
+  constructor(readonly childId: string) {
+    super('Child was created, but its login could not be configured')
+  }
+}
+
+const validEmail = (value: string) => !value || /^\S+@\S+\.\S+$/.test(value.trim())
 
 export function ChildrenPage() {
   const t = useT()
@@ -28,31 +53,66 @@ export function ChildrenPage() {
 
   const save = useMutation({
     mutationFn: async (value: Draft) => {
+      let childId = value.id
       if (value.id) {
         const { error } = await supabase
           .from('children')
           .update({ name: value.name.trim(), avatar_emoji: value.emoji, avatar_color: value.color })
           .eq('id', value.id)
         if (error) throw error
-        return
+      } else {
+        const { data, error } = await supabase
+          .from('children')
+          .insert({
+            family_id: familyId!,
+            name: value.name.trim(),
+            avatar_emoji: value.emoji,
+            avatar_color: value.color,
+            sort_order: children?.length ?? 0,
+          })
+          .select('id')
+          .single()
+        if (error) throw error
+        childId = data.id
       }
-      const { error } = await supabase.from('children').insert({
-        family_id: familyId!,
-        name: value.name.trim(),
-        avatar_emoji: value.emoji,
-        avatar_color: value.color,
-        sort_order: children?.length ?? 0,
-      })
-      if (error) throw error
+
+      const currentEmail = children?.find((child) => child.id === value.id)?.login_email ?? ''
+      const loginChanged = value.loginEmail.trim().toLowerCase() !== currentEmail
+      if (loginChanged || value.password) {
+        const { error } = await supabase.functions.invoke('manage-child-login', {
+          body: {
+            child_id: childId,
+            email: value.loginEmail.trim(),
+            password: value.password,
+          },
+        })
+        if (error) {
+          if (!value.id && childId) throw new CreatedChildLoginError(childId)
+          throw error
+        }
+      }
     },
     onSuccess: () => {
       setDraft(null)
       invalidate()
     },
+    onError: (error) => {
+      if (error instanceof CreatedChildLoginError) {
+        setDraft((current) => (current ? { ...current, id: error.childId } : current))
+        invalidate()
+      }
+    },
   })
 
   const remove = useMutation({
     mutationFn: async (childId: string) => {
+      const child = children?.find((entry) => entry.id === childId)
+      if (child?.login_email) {
+        const { error } = await supabase.functions.invoke('manage-child-login', {
+          body: { child_id: childId, email: '' },
+        })
+        if (error) throw error
+      }
       const { error } = await supabase.from('children').delete().eq('id', childId)
       if (error) throw error
     },
@@ -80,6 +140,7 @@ export function ChildrenPage() {
                 <Card className="list-row">
                   <Avatar emoji={child.avatar_emoji} color={child.avatar_color} />
                   <span className="list-row__text list-row__title">{child.name}</span>
+                  {child.login_email && <span className="muted">{t.children.loginEnabled}</span>}
                   <Button
                     variant="ghost"
                     onClick={() =>
@@ -88,6 +149,9 @@ export function ChildrenPage() {
                         name: child.name,
                         emoji: child.avatar_emoji,
                         color: child.avatar_color,
+                        loginEmail: child.login_email ?? '',
+                        password: '',
+                        hadLogin: Boolean(child.login_email),
                       })
                     }
                   >
@@ -112,6 +176,9 @@ export function ChildrenPage() {
               name: '',
               emoji: CHILD_EMOJIS[(children?.length ?? 0) % CHILD_EMOJIS.length],
               color: CHILD_COLORS[(children?.length ?? 0) % CHILD_COLORS.length],
+              loginEmail: '',
+              password: '',
+              hadLogin: false,
             })
           }
         >
@@ -129,7 +196,13 @@ export function ChildrenPage() {
               {t.common.cancel}
             </Button>
             <Button
-              disabled={!draft?.name.trim() || save.isPending}
+              disabled={
+                !draft?.name.trim()
+                || save.isPending
+                || !validEmail(draft?.loginEmail ?? '')
+                || Boolean(draft?.loginEmail && !draft.hadLogin && draft.password.length < 8)
+                || Boolean(draft?.password && draft.password.length < 8)
+              }
               onClick={() => draft && save.mutate(draft)}
             >
               {t.common.save}
@@ -165,6 +238,44 @@ export function ChildrenPage() {
                 onChange={(color) => setDraft({ ...draft, color })}
               />
             </Field>
+            <h3 className="section-title">{t.children.loginSection}</h3>
+            <p className="muted">{t.children.loginHint}</p>
+            <Field
+              label={t.children.loginEmail}
+              htmlFor="childLoginEmail"
+              hint={draft.hadLogin ? t.children.loginRemoveHint : undefined}
+            >
+              <TextInput
+                id="childLoginEmail"
+                type="email"
+                className="input--ltr"
+                dir="ltr"
+                autoComplete="off"
+                value={draft.loginEmail}
+                onChange={(event) => setDraft({ ...draft, loginEmail: event.target.value })}
+              />
+            </Field>
+            {draft.loginEmail && (
+              <Field
+                label={t.children.loginPassword}
+                htmlFor="childLoginPassword"
+                hint={
+                  draft.hadLogin
+                    ? t.children.loginPasswordEditHint
+                    : t.children.loginPasswordNewHint
+                }
+              >
+                <PasswordInput
+                  id="childLoginPassword"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required={!draft.hadLogin}
+                  value={draft.password}
+                  onChange={(event) => setDraft({ ...draft, password: event.target.value })}
+                />
+              </Field>
+            )}
+            {save.isError && <Banner tone="error">{t.children.loginSaveError}</Banner>}
           </>
         )}
       </Modal>

@@ -62,12 +62,28 @@ function RequireFamily({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+/** Parent screens are never reachable from an independently signed-in child account. */
+function RequireParent({ children }: { children: ReactNode }) {
+  const { session, loading, profile, profileLoading } = useAuth()
+
+  if (loading || (session && profileLoading)) return <FullScreenLoader />
+  if (!session) return <Navigate to="/login" replace />
+  if (!profile) return <Navigate to="/onboarding" replace />
+  if (profile.account_type === 'child' && profile.child_id) {
+    return <Navigate to={`/child/${profile.child_id}`} replace />
+  }
+  return <>{children}</>
+}
+
 function RedirectHome() {
   const { session, loading, profile, profileLoading } = useAuth()
 
   if (loading || (session && profileLoading)) return <FullScreenLoader />
   if (!session) return <Navigate to="/login" replace />
   if (!profile) return <Navigate to="/onboarding" replace />
+  if (profile.account_type === 'child' && profile.child_id) {
+    return <Navigate to={`/child/${profile.child_id}`} replace />
+  }
   return <Navigate to="/child" replace />
 }
 
@@ -124,9 +140,9 @@ export function AppRoutes() {
         <Route
           path="/parent"
           element={
-            <RequireFamily>
+            <RequireParent>
               <ParentLayout />
-            </RequireFamily>
+            </RequireParent>
           }
         >
           <Route index element={<DashboardPage />} />

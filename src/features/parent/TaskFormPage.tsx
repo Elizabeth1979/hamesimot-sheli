@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { keys, useChecklistItems, useChildren, useRoutines, useTasks } from '@/lib/queries'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/app/AuthProvider'
 import { useT } from '@/i18n'
 import {
   Button,
@@ -69,7 +68,6 @@ export function TaskFormPage() {
   const t = useT()
   const navigate = useNavigate()
   const { taskId } = useParams()
-  const { familyId } = useAuth()
   const queryClient = useQueryClient()
 
   const { data: children } = useChildren()
@@ -124,7 +122,6 @@ export function TaskFormPage() {
   const save = useMutation({
     mutationFn: async (value: Draft) => {
       const payload = {
-        family_id: familyId!,
         child_id: value.childId,
         routine_id: value.routineId || null,
         title: value.title.trim(),
@@ -144,27 +141,13 @@ export function TaskFormPage() {
         is_active: value.isActive,
       }
 
-      const id = taskId
-        ? ((await supabase.from('tasks').update(payload).eq('id', taskId).select('id').single())
-            .data?.id ?? taskId)
-        : ((await supabase.from('tasks').insert(payload).select('id').single()).data?.id ?? null)
-
-      if (!id) throw new Error('task save failed')
-
-      // Checklist rows are small and order-sensitive: replace them wholesale.
-      await supabase.from('task_checklist_items').delete().eq('task_id', id)
       const steps = value.checklist.map((title) => title.trim()).filter(Boolean)
-      if (value.type === 'checklist' && steps.length > 0) {
-        const { error } = await supabase.from('task_checklist_items').insert(
-          steps.map((title, index) => ({
-            family_id: familyId!,
-            task_id: id,
-            title,
-            sort_order: index,
-          })),
-        )
-        if (error) throw error
-      }
+      const { error } = await supabase.rpc('save_task_with_checklist', {
+        p_task_id: taskId ?? null,
+        p_task: payload,
+        p_checklist: value.type === 'checklist' ? steps : [],
+      })
+      if (error) throw error
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: keys.tasks })

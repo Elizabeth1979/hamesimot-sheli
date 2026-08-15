@@ -76,7 +76,7 @@ export const en: Dictionary = {
     invalidCredentials: 'Wrong email or password',
     emailInUse: 'That email is already registered',
     weakPassword: 'That password is too short',
-    parentOnlyNote: 'Accounts are for parents only. Children do not get their own account.',
+    parentOnlyNote: 'Parent accounts are created here. You can add an optional child login later.',
   },
 
   onboarding: {
@@ -184,6 +184,15 @@ export const en: Dictionary = {
     addTitle: 'Add a child',
     editTitle: 'Edit profile',
     nameLabel: 'Name',
+    loginSection: 'Child login (optional)',
+    loginHint: 'Lets this child sign in on their own device and see only their profile.',
+    loginEmail: "Child's email",
+    loginRemoveHint: 'Clear the email and save to disable this login.',
+    loginPassword: 'Password',
+    loginPasswordNewHint: 'At least 8 characters',
+    loginPasswordEditHint: 'Leave blank to keep the current password',
+    loginEnabled: 'Email login enabled',
+    loginSaveError: 'Could not update this child login. Check the email and try again.',
     deleteConfirmTitle: 'Delete profile',
     deleteConfirmBody: (name: string) =>
       `Delete ${name}'s profile? All their tasks, completions and journal entries are erased permanently.`,
@@ -355,6 +364,7 @@ export const en: Dictionary = {
     pending: (count: number) => `${count} actions waiting to sync`,
     failed: 'Some actions did not sync',
     retry: 'Retry sync',
+    discard: 'Discard failed action',
     offlineTitle: 'No connection',
     offlineBody: 'This screen has not been loaded yet. Go online and try again.',
   },

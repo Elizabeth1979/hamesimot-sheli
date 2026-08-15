@@ -96,8 +96,7 @@ describe('offline outbox', () => {
     expect(calls).toHaveLength(1)
   })
 
-  it('drops a permanently rejected operation instead of blocking the ones behind it', async () => {
-    // A constraint violation will never succeed; the next operation must still go out.
+  it('preserves a permanently rejected operation until the user retries it', async () => {
     await queueOffline(
       { kind: 'journal.save', childId: 'c1', forDate: '2026-08-01', mood: 9, note: '' },
       { kind: 'completion.add', taskId: 't2', forDate: '2026-08-01', clientId: 'c3' },
@@ -105,8 +104,15 @@ describe('offline outbox', () => {
     failNext = { times: 1, error: Object.assign(new Error('violates check constraint'), { code: '23514' }) }
     await flushOutbox()
 
-    expect(await pendingOperations()).toHaveLength(0)
-    expect(calls.map((call) => call.table)).toEqual(['task_completions'])
+    const queued = await pendingOperations()
+    expect(queued).toHaveLength(2)
+    expect(queued[0].deadLetter).toBe(true)
+    expect(calls).toHaveLength(0)
     expect(getSyncState().failed).toBe(true)
+
+    const { retryFailedOperations } = await import('./outbox')
+    await retryFailedOperations()
+    expect(await pendingOperations()).toHaveLength(0)
+    expect(calls.map((call) => call.table)).toEqual(['journal_entries', 'task_completions'])
   })
 })
