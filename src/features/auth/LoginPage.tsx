@@ -111,7 +111,9 @@ export function LoginPage() {
       >
         {busy ? t.common.loading : t.auth.sendMagicLink}
       </Button>
-      <p className="auth__hint muted">{t.auth.magicLinkHint}</p>
+      <p className="auth__hint muted">
+        {email.trim() ? t.auth.magicLinkHint : t.auth.magicLinkEnterEmail}
+      </p>
     </AuthShell>
   )
 }
