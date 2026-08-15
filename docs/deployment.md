@@ -66,6 +66,16 @@ Add your production URL under **Authentication → URL Configuration → Site UR
 once you have deployed, otherwise password-reset and confirmation links point at
 `localhost`.
 
+Magic-link sign-in also needs its return URLs on the same page. Add the exact
+production login URL (for example, `https://your-app.example/login`) under
+**Redirect URLs**. For local development, add both:
+
+- `http://localhost:5173/**`
+- `http://127.0.0.1:5173/**`
+
+Keep production redirects exact; reserve wildcard patterns for local development
+and temporary Vercel preview URLs.
+
 ### Collect the keys
 
 **Project Settings → API** gives you the two values the frontend needs:

@@ -43,3 +43,25 @@
   margin-block-start: var(--space-2);
   font-size: var(--text-sm);
 }
+
+.auth__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.auth__divider::before,
+.auth__divider::after {
+  content: '';
+  flex: 1;
+  block-size: 1px;
+  background: var(--border);
+}
+
+.auth__hint {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-sm);
+}
