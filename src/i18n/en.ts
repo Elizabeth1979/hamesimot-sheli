@@ -77,6 +77,7 @@ export const en: Dictionary = {
     invalidCredentials: 'Wrong email or password',
     or: 'or',
     sendMagicLink: 'Email me a magic link',
+    magicLinkEnterEmail: 'Enter your email first to enable the magic-link button.',
     magicLinkHint: 'Use the email already connected to your parent or child account.',
     magicLinkSent: 'Check your inbox. We sent you a one-time sign-in link.',
     emailInUse: 'That email is already registered',
