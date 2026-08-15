@@ -14,8 +14,9 @@ export const supabase = createClient<Database>(url, anonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    // The app never receives auth tokens in the URL; email links land on our own routes.
-    detectSessionInUrl: false,
+    // Magic-link and confirmation URLs return through the app. Supabase consumes the
+    // one-time URL credentials and persists the resulting session for AuthProvider.
+    detectSessionInUrl: true,
     storageKey: 'kidtasks.auth',
   },
 })
