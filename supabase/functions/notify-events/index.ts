@@ -24,16 +24,17 @@ Deno.serve(async (request: Request) => {
   if (request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405)
   if (!requireServiceRole(request)) return jsonResponse({ error: 'forbidden' }, 403)
 
-  const body = (await request.json()) as EventBody
+  const body = (await request.json().catch(() => null)) as EventBody | null
   if (!body?.family_id || !body.event) return jsonResponse({ error: 'bad request' }, 400)
 
   const client = serviceClient()
 
-  const { data: family } = await client
+  const { data: family, error: familyError } = await client
     .from('families')
     .select('notify_generic_lockscreen')
     .eq('id', body.family_id)
     .maybeSingle()
+  if (familyError) return jsonResponse({ error: familyError.message }, 500)
 
   const generic = family?.notify_generic_lockscreen ?? true
   const who = generic ? 'אחד הילדים' : (body.child_name ?? '')
@@ -66,8 +67,12 @@ Deno.serve(async (request: Request) => {
     },
   }
 
-  const subscriptions = await subscriptionsForFamily(client, body.family_id)
-  const result = await sendToSubscriptions(client, subscriptions, payloads[body.event])
+  try {
+    const subscriptions = await subscriptionsForFamily(client, body.family_id)
+    const result = await sendToSubscriptions(client, subscriptions, payloads[body.event])
 
-  return jsonResponse(result)
+    return jsonResponse(result)
+  } catch (error) {
+    return jsonResponse({ error: error instanceof Error ? error.message : 'push failed' }, 500)
+  }
 })

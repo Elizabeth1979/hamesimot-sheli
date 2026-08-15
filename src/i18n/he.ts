@@ -75,7 +75,7 @@ export const he = {
     invalidCredentials: 'האימייל או הסיסמה שגויים',
     emailInUse: 'כתובת האימייל כבר רשומה',
     weakPassword: 'הסיסמה קצרה מדי',
-    parentOnlyNote: 'החשבון נועד להורים בלבד. לילדים אין חשבון נפרד.',
+    parentOnlyNote: 'כאן יוצרים חשבון הורה. בהמשך אפשר להוסיף התחברות נפרדת לילד/ה.',
   },
 
   onboarding: {
@@ -183,6 +183,15 @@ export const he = {
     addTitle: 'הוספת ילד/ה',
     editTitle: 'עריכת פרופיל',
     nameLabel: 'שם',
+    loginSection: 'התחברות ילד/ה (לא חובה)',
+    loginHint: 'מאפשר לילד/ה להתחבר במכשיר משלהם ולראות רק את הפרופיל שלהם.',
+    loginEmail: 'אימייל של הילד/ה',
+    loginRemoveHint: 'מחקו את האימייל ושמרו כדי לבטל את ההתחברות.',
+    loginPassword: 'סיסמה',
+    loginPasswordNewHint: 'לפחות 8 תווים',
+    loginPasswordEditHint: 'השאירו ריק כדי לשמור את הסיסמה הקיימת',
+    loginEnabled: 'התחברות באימייל פעילה',
+    loginSaveError: 'לא הצלחנו לעדכן את ההתחברות. בדקו את האימייל ונסו שוב.',
     deleteConfirmTitle: 'מחיקת פרופיל',
     deleteConfirmBody: (name: string) =>
       `למחוק את הפרופיל של ${name}? כל המשימות, הביצועים והיומן שלו יימחקו לצמיתות.`,
@@ -354,6 +363,7 @@ export const he = {
     pending: (count: number) => `${count} פעולות ממתינות לסנכרון`,
     failed: 'חלק מהפעולות לא הסתנכרנו',
     retry: 'ניסיון סנכרון מחדש',
+    discard: 'מחיקת הפעולה שנכשלה',
     offlineTitle: 'אין חיבור',
     offlineBody: 'המסך הזה עדיין לא נטען. התחברו לאינטרנט ונסו שוב.',
   },

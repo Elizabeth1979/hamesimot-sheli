@@ -3,7 +3,6 @@ import {
   requireServiceRole,
   sendToSubscriptions,
   serviceClient,
-  subscriptionsForFamily,
 } from '../_shared/push.ts'
 
 /**
@@ -27,7 +26,7 @@ const WINDOW_MINUTES = 5
 function localParts(timezone: string, now: Date) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
-    hour12: false,
+    hourCycle: 'h23',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -69,7 +68,12 @@ Deno.serve(async (request: Request) => {
 
   if (error) return jsonResponse({ error: error.message }, 500)
 
-  let notified = 0
+  const dueFamilies: Array<{
+    id: string
+    slot: 'morning' | 'afternoon' | 'evening'
+    dateKey: string
+    weekday: number
+  }> = []
 
   for (const family of families ?? []) {
     let local
@@ -87,40 +91,75 @@ Deno.serve(async (request: Request) => {
       return delta >= 0 && delta < WINDOW_MINUTES
     })
 
-    if (!dueSlot) continue
+    if (dueSlot) {
+      dueFamilies.push({
+        id: family.id,
+        slot: dueSlot,
+        dateKey: local.dateKey,
+        weekday: local.weekday,
+      })
+    }
+  }
 
-    const { data: tasks } = await client
+  if (dueFamilies.length === 0) return jsonResponse({ notified: 0 })
+
+  const familyIds = dueFamilies.map((family) => family.id)
+  const dateKeys = [...new Set(dueFamilies.map((family) => family.dateKey))]
+  const [taskResult, completionResult, subscriptionResult] = await Promise.all([
+    client
       .from('tasks')
-      .select('id, days_of_week')
-      .eq('family_id', family.id)
-      .eq('time_slot', dueSlot)
-      .eq('is_active', true)
+      .select('id, family_id, time_slot, days_of_week')
+      .in('family_id', familyIds)
+      .eq('is_active', true),
+    client
+      .from('task_completions')
+      .select('family_id, task_id, for_date')
+      .in('family_id', familyIds)
+      .in('for_date', dateKeys),
+    client
+      .from('push_subscriptions')
+      .select('id, family_id, endpoint, p256dh, auth')
+      .in('family_id', familyIds),
+  ])
 
-    const dueToday = (tasks ?? []).filter((task) =>
-      (task.days_of_week as number[]).includes(local.weekday),
+  const batchError = taskResult.error ?? completionResult.error ?? subscriptionResult.error
+  if (batchError) return jsonResponse({ error: batchError.message }, 500)
+
+  let notified = 0
+  let failedFamilies = 0
+
+  for (const family of dueFamilies) {
+    const dueToday = (taskResult.data ?? []).filter(
+      (task) =>
+        task.family_id === family.id &&
+        task.time_slot === family.slot &&
+        (task.days_of_week as number[]).includes(family.weekday),
     )
     if (dueToday.length === 0) continue
 
-    const { data: completions } = await client
-      .from('task_completions')
-      .select('task_id')
-      .eq('family_id', family.id)
-      .eq('for_date', local.dateKey)
-
-    const doneIds = new Set((completions ?? []).map((row) => row.task_id))
+    const doneIds = new Set(
+      (completionResult.data ?? [])
+        .filter((row) => row.family_id === family.id && row.for_date === family.dateKey)
+        .map((row) => row.task_id),
+    )
     const remaining = dueToday.filter((task) => !doneIds.has(task.id)).length
     if (remaining === 0) continue
 
-    const subscriptions = await subscriptionsForFamily(client, family.id)
-    const result = await sendToSubscriptions(client, subscriptions, {
-      title: SLOT_LABELS[dueSlot],
-      body: `נשארו ${remaining} משימות`,
-      url: '/child',
-      tag: `kidtasks-reminder-${dueSlot}`,
-    })
-
-    notified += result.sent
+    const subscriptions = (subscriptionResult.data ?? []).filter(
+      (subscription) => subscription.family_id === family.id,
+    )
+    try {
+      const result = await sendToSubscriptions(client, subscriptions, {
+        title: SLOT_LABELS[family.slot],
+        body: `נשארו ${remaining} משימות`,
+        url: '/child',
+        tag: `kidtasks-reminder-${family.slot}`,
+      })
+      notified += result.sent
+    } catch {
+      failedFamilies += 1
+    }
   }
 
-  return jsonResponse({ notified })
+  return jsonResponse({ notified, failedFamilies })
 })

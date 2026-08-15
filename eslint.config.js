@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist', 'coverage', 'node_modules', 'supabase/functions/**'] },
+  { ignores: ['dist', 'dev-dist', 'coverage', 'node_modules'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -28,5 +28,9 @@ export default tseslint.config(
   {
     files: ['vite.config.ts', 'vitest.config.ts'],
     languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['supabase/functions/**/*.ts'],
+    languageOptions: { globals: globals.deno },
   },
 )

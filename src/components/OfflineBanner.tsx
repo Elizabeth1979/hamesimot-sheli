@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { flushOutbox, subscribeToSync, type SyncState } from '@/lib/outbox'
+import {
+  discardFailedOperations,
+  retryFailedOperations,
+  subscribeToSync,
+  type SyncState,
+} from '@/lib/outbox'
 import { useT } from '@/i18n'
 import './OfflineBanner.css'
 
@@ -56,8 +61,11 @@ export function OfflineBanner() {
     return (
       <div className="sync-bar sync-bar--error" role="alert">
         {t.offline.failed}
-        <button type="button" onClick={() => void flushOutbox()}>
+        <button type="button" onClick={() => void retryFailedOperations()}>
           {t.offline.retry}
+        </button>
+        <button type="button" onClick={() => void discardFailedOperations()}>
+          {t.offline.discard}
         </button>
       </div>
     )

@@ -28,7 +28,7 @@ export function DeleteAccountRequestPage() {
               <p>
                 הדרך המהירה ביותר: היכנסו לחשבון, פתחו את אזור ההורים ובחרו הגדרות → מחיקת חשבון
                 המשפחה. המחיקה מיידית ומוחקת לצמיתות את כל נתוני המשפחה: פרופילי הילדים, המשימות,
-                השגרות, הפרסים, סימוני הביצוע ורשומות היומן, וכן את כל חשבונות ההורים במשפחה.
+                השגרות, הפרסים, סימוני הביצוע ורשומות היומן, וכן את כל חשבונות ההורים והילדים המקושרים.
               </p>
             </section>
             <section>
@@ -57,7 +57,7 @@ export function DeleteAccountRequestPage() {
                 The fastest route: sign in, open the parent area and choose Settings → Delete family
                 account. It happens immediately and permanently erases all family data — child
                 profiles, tasks, routines, rewards, completions and journal entries — along with
-                every parent account in the family.
+                every linked parent and child account in the family.
               </p>
             </section>
             <section>

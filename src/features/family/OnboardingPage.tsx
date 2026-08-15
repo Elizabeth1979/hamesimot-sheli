@@ -90,9 +90,14 @@ export function OnboardingPage() {
     setBusy(true)
     setError('')
 
-    const { data: familyId, error: rpcError } = await supabase.rpc('create_family', {
+    const { data: familyId, error: rpcError } = await supabase.rpc('create_family_with_children', {
       family_name: familyName.trim() || t.common.appName,
       display_name: session?.user.user_metadata.display_name ?? '',
+      child_drafts: named.map((draft) => ({
+        name: draft.name.trim(),
+        emoji: draft.emoji,
+        color: draft.color,
+      })),
     })
 
     if (rpcError || !familyId) {
@@ -101,22 +106,7 @@ export function OnboardingPage() {
       return
     }
 
-    const { error: childError } = await supabase.from('children').insert(
-      named.map((draft, index) => ({
-        family_id: familyId,
-        name: draft.name.trim(),
-        avatar_emoji: draft.emoji,
-        avatar_color: draft.color,
-        sort_order: index,
-      })),
-    )
-
     setBusy(false)
-    if (childError) {
-      setError(t.errors.generic)
-      return
-    }
-
     // Joining a family changes the answer to every family-scoped query, and those
     // queries were already cached (and persisted) as empty from before the family
     // existed. Without a full invalidation the app keeps serving that empty snapshot,

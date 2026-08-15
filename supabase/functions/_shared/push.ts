@@ -1,5 +1,5 @@
 import webpush from 'npm:web-push@3.6.7'
-import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2.111.0'
 
 export type PushPayload = {
   title: string
@@ -50,27 +50,31 @@ export async function sendToSubscriptions(
   const stale: string[] = []
   let sent = 0
 
-  await Promise.all(
-    subscriptions.map(async (subscription) => {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: subscription.endpoint,
-            keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-          },
-          body,
-        )
-        sent += 1
-      } catch (error) {
-        const status = (error as { statusCode?: number }).statusCode
-        if (status === 404 || status === 410) stale.push(subscription.endpoint)
-        else console.error('push failed', subscription.endpoint, status, String(error))
-      }
-    }),
-  )
+  const sendOne = async (subscription: Subscription) => {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: subscription.endpoint,
+          keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+        },
+        body,
+      )
+      sent += 1
+    } catch (error) {
+      const status = (error as { statusCode?: number }).statusCode
+      if (status === 404 || status === 410) stale.push(subscription.endpoint)
+      else console.error('push failed', status, String(error))
+    }
+  }
+
+  // Bound concurrent outbound requests so a large family cannot exhaust the isolate.
+  for (let offset = 0; offset < subscriptions.length; offset += 20) {
+    await Promise.all(subscriptions.slice(offset, offset + 20).map(sendOne))
+  }
 
   if (stale.length > 0) {
-    await client.from('push_subscriptions').delete().in('endpoint', stale)
+    const { error } = await client.from('push_subscriptions').delete().in('endpoint', stale)
+    if (error) console.error('stale push cleanup failed', error.message)
   }
 
   return { sent, removed: stale.length }
@@ -92,13 +96,16 @@ export async function subscriptionsForFamily(
 export function requireServiceRole(request: Request): boolean {
   const header = request.headers.get('Authorization') ?? ''
   const token = header.replace(/^Bearer\s+/i, '')
-  if (!token) return false
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1])) as { role?: string }
-    return payload.role === 'service_role'
-  } catch {
-    return false
+  const expected = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (!token || token.length !== expected.length) return false
+
+  // Compare every byte so a disabled gateway JWT check cannot turn payload decoding
+  // into an authentication bypass.
+  let difference = 0
+  for (let index = 0; index < token.length; index += 1) {
+    difference |= token.charCodeAt(index) ^ expected.charCodeAt(index)
   }
+  return difference === 0
 }
 
 export const jsonResponse = (body: unknown, status = 200) =>

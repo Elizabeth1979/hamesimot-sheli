@@ -34,7 +34,7 @@ export function SettingsPage() {
   const t = useT()
   const { locale, setLocale } = useLocale()
   const { preference, setPreference } = useTheme()
-  const { session, familyId, signOut } = useAuth()
+  const { familyId, signOut } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: family, isPending } = useFamily()
@@ -48,6 +48,7 @@ export function SettingsPage() {
   const [pushOn, setPushOn] = useState(false)
   const [pushMessage, setPushMessage] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
 
   useEffect(() => {
     void isPushEnabled().then(setPushOn)
@@ -112,7 +113,7 @@ export function SettingsPage() {
       return
     }
 
-    const result = await enablePush(family!.id, session!.user.id)
+    const result = await enablePush()
     if (result === 'ok') {
       setPushOn(true)
       setPushMessage(t.push.enabled)
@@ -277,12 +278,16 @@ export function SettingsPage() {
 
         <h2 className="section-title">{t.settings.dataSection}</h2>
         <Card className="stack">
+          {exportError && <Banner tone="error">{exportError}</Banner>}
           <Button
             variant="secondary"
             disabled={exporting}
             onClick={() => {
               setExporting(true)
-              void exportFamilyData().finally(() => setExporting(false))
+              setExportError('')
+              void exportFamilyData()
+                .catch(() => setExportError(t.errors.generic))
+                .finally(() => setExporting(false))
             }}
           >
             {t.settings.exportData}

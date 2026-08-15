@@ -43,7 +43,7 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 }
 
 /** Asks for permission, subscribes, and records the endpoint against the family. */
-export async function enablePush(familyId: string, userId: string): Promise<PushSupport | 'denied' | 'ok'> {
+export async function enablePush(): Promise<PushSupport | 'denied' | 'ok'> {
   const support = pushSupport()
   if (support !== 'supported') return support
 
@@ -62,18 +62,12 @@ export async function enablePush(familyId: string, userId: string): Promise<Push
   const json = subscription.toJSON()
   if (!json.keys?.p256dh || !json.keys.auth) return 'unsupported'
 
-  const { error } = await supabase.from('push_subscriptions').upsert(
-    {
-      family_id: familyId,
-      user_id: userId,
-      endpoint: subscription.endpoint,
-      p256dh: json.keys.p256dh,
-      auth: json.keys.auth,
-      user_agent: navigator.userAgent.slice(0, 200),
-      last_seen_at: new Date().toISOString(),
-    },
-    { onConflict: 'endpoint' },
-  )
+  const { error } = await supabase.rpc('register_push_subscription', {
+    p_endpoint: subscription.endpoint,
+    p_p256dh: json.keys.p256dh,
+    p_auth: json.keys.auth,
+    p_user_agent: navigator.userAgent,
+  })
   if (error) throw error
 
   return 'ok'
@@ -81,12 +75,17 @@ export async function enablePush(familyId: string, userId: string): Promise<Push
 
 export async function disablePush(): Promise<void> {
   if (!('serviceWorker' in navigator)) return
-  const registration = await navigator.serviceWorker.ready
+  const registration = await navigator.serviceWorker.getRegistration()
+  if (!registration) return
   const subscription = await registration.pushManager.getSubscription()
   if (!subscription) return
 
-  await supabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint)
-  await subscription.unsubscribe()
+  const [{ error }, unsubscribed] = await Promise.all([
+    supabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint),
+    subscription.unsubscribe(),
+  ])
+  if (error) throw error
+  if (!unsubscribed) throw new Error('push unsubscribe failed')
 }
 
 export async function isPushEnabled(): Promise<boolean> {

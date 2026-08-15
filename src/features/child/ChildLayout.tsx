@@ -1,10 +1,12 @@
 import { NavLink, Outlet, useParams, Navigate } from 'react-router-dom'
 import { useChildren } from '@/lib/queries'
 import { useT } from '@/i18n'
+import { useAuth } from '@/app/AuthProvider'
 import { Spinner } from '@/components/ui'
 
 export function ChildLayout() {
   const t = useT()
+  const { profile, signOut } = useAuth()
   const { childId } = useParams()
   const { data: children, isPending } = useChildren()
 
@@ -51,12 +53,21 @@ export function ChildLayout() {
           </span>
           {t.nav.journal}
         </NavLink>
-        <NavLink to="/child" className="tabbar__item">
-          <span className="tabbar__icon" aria-hidden="true">
-            🔄
-          </span>
-          {t.nav.switchChild}
-        </NavLink>
+        {profile?.account_type === 'child' ? (
+          <button type="button" className="tabbar__item" onClick={() => void signOut()}>
+            <span className="tabbar__icon" aria-hidden="true">
+              ↩️
+            </span>
+            {t.auth.logout}
+          </button>
+        ) : (
+          <NavLink to="/child" className="tabbar__item">
+            <span className="tabbar__icon" aria-hidden="true">
+              🔄
+            </span>
+            {t.nav.switchChild}
+          </NavLink>
+        )}
       </nav>
     </div>
   )

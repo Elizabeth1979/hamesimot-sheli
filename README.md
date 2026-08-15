@@ -21,6 +21,8 @@ app-store account required and no native project to build.
 - **Stars and rewards** — stars earned from tasks, spendable on prizes; requests
   go to a parent for approval.
 - **Journal** — a daily mood picker and a free-text note.
+- **Optional personal login** — a parent can give a child an email/password login
+  that opens only that child's profile.
 
 **For parents**
 - Dashboard with each child's progress for today and a queue of pending approvals.
@@ -43,7 +45,7 @@ app-store account required and no native project to build.
 | UI | React 19, TypeScript, Vite 7 |
 | Routing | react-router 7 |
 | Server state | TanStack Query 5 (persisted to localStorage for offline reads) |
-| Offline writes | Dexie (IndexedDB) outbox queue |
+| Offline writes | Small native IndexedDB outbox queue |
 | PWA | vite-plugin-pwa with a custom Workbox service worker (`src/sw.ts`) |
 | Backend | Supabase — Postgres, Auth, Row Level Security, Edge Functions |
 | Hosting | Vercel (static) |
@@ -81,7 +83,7 @@ configured and the rest of the app works normally.
 
 The SQL in `supabase/migrations/` is the source of truth and is already applied to
 the project this repo was developed against. To set up a fresh project, apply the
-migrations in numeric order and deploy the three functions in
+migrations in numeric order and deploy the four functions in
 `supabase/functions/`. See [`docs/deployment.md`](docs/deployment.md).
 
 ## Commands
@@ -93,6 +95,8 @@ npm run preview    # serve the production build locally
 npm run lint       # eslint
 npm run typecheck  # tsc
 npm test           # vitest
+npm run test:db    # local Supabase pgTAP security tests
+npm run lint:db    # local Postgres schema/function lint
 ```
 
 ## Documentation
@@ -107,10 +111,9 @@ The app is built for children's data and is deliberately narrow: no ads, no
 analytics, no third-party trackers, no advertising IDs, no public profiles, no
 chat, and no way for a child to contact anyone outside their family. Only a parent
 can create a family or invite another parent. Data collected is limited to what
-the app needs to work — a parent's email, first names, and the tasks and
+the app needs to work — account emails, first names, and the tasks and
 completions themselves. Deletion is real deletion, not deactivation.
 
-Note that the parent PIN is a convenience gate to keep children out of the parent
-screens on a shared device. It is not a security boundary: child mode runs inside
-the parent's authenticated session. Row Level Security guarantees one family can
-never read another family's data, which is the boundary that actually matters.
+The parent PIN is a convenience gate on a shared parent device. Independently
+signed-in child accounts are also restricted by Row Level Security to their own
+child profile; parent accounts remain scoped to their family.

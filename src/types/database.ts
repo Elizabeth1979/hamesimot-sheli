@@ -6,6 +6,30 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      account_deletion_jobs: {
+        Row: {
+          caller_id: string
+          database_deleted: boolean
+          family_id: string | null
+          remaining_user_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          caller_id: string
+          database_deleted?: boolean
+          family_id?: string | null
+          remaining_user_ids: string[]
+          updated_at?: string
+        }
+        Update: {
+          caller_id?: string
+          database_deleted?: boolean
+          family_id?: string | null
+          remaining_user_ids?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checklist_item_completions: {
         Row: {
           child_id: string
@@ -43,6 +67,7 @@ export type Database = {
           created_at: string
           family_id: string
           id: string
+          login_email: string | null
           name: string
           sort_order: number
         }
@@ -52,6 +77,7 @@ export type Database = {
           created_at?: string
           family_id: string
           id?: string
+          login_email?: string | null
           name: string
           sort_order?: number
         }
@@ -61,6 +87,7 @@ export type Database = {
           created_at?: string
           family_id?: string
           id?: string
+          login_email?: string | null
           name?: string
           sort_order?: number
         }
@@ -173,6 +200,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: Database['public']['Enums']['account_type']
+          child_id: string | null
           created_at: string
           display_name: string
           family_id: string
@@ -180,6 +209,8 @@ export type Database = {
           role: Database['public']['Enums']['member_role']
         }
         Insert: {
+          account_type?: Database['public']['Enums']['account_type']
+          child_id?: string | null
           created_at?: string
           display_name: string
           family_id: string
@@ -187,6 +218,8 @@ export type Database = {
           role?: Database['public']['Enums']['member_role']
         }
         Update: {
+          account_type?: Database['public']['Enums']['account_type']
+          child_id?: string | null
           created_at?: string
           display_name?: string
           family_id?: string
@@ -500,16 +533,29 @@ export type Database = {
         Args: { display_name: string; family_name: string }
         Returns: string
       }
+      create_family_with_children: {
+        Args: { child_drafts: Json; display_name: string; family_name: string }
+        Returns: string
+      }
       request_redemption: {
         Args: { p_child_id: string; p_reward_id: string }
         Returns: string
+      }
+      register_push_subscription: {
+        Args: { p_auth: string; p_endpoint: string; p_p256dh: string; p_user_agent: string }
+        Returns: undefined
       }
       resolve_redemption: {
         Args: { p_approve: boolean; p_redemption_id: string }
         Returns: undefined
       }
+      save_task_with_checklist: {
+        Args: { p_checklist?: string[]; p_task: Json; p_task_id: string | null }
+        Returns: string
+      }
     }
     Enums: {
+      account_type: 'parent' | 'child'
       completion_status: 'done' | 'pending_approval' | 'approved'
       member_role: 'owner' | 'parent'
       redemption_status: 'pending' | 'approved' | 'rejected'

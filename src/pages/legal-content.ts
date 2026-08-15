@@ -20,6 +20,7 @@ export const PRIVACY_HE: Section[] = [
     heading: 'איזה מידע נאסף',
     body: [
       'חשבון ההורה: כתובת אימייל וסיסמה מוצפנת (מנוהלות על ידי Supabase Auth), ושם תצוגה שאתם מזינים.',
+      'התחברות ילד/ה (לא חובה): אם הורה מפעיל אפשרות זו, נשמרים כתובת האימייל של הילד/ה וסיסמה מוצפנת המנוהלת על ידי Supabase Auth.',
       'פרטי המשפחה: שם המשפחה, אזור זמן, שעות תזכורת והעדפות התראה.',
       'פרופילי ילדים: שם פרטי בלבד (כפי שאתם בוחרים להקליד), אימוג׳י וצבע. איננו אוספים תאריך לידה, תמונות, מיקום, אנשי קשר, מיקרופון או מצלמה.',
       'תוכן שאתם יוצרים: משימות, שגרות, רשימות שלבים, פרסים, סימוני ביצוע ורשומות יומן (מצב רוח וטקסט חופשי).',
@@ -37,7 +38,7 @@ export const PRIVACY_HE: Section[] = [
     heading: 'היכן המידע נשמר',
     body: [
       'המידע נשמר בשירות Supabase (מסד נתונים PostgreSQL) בשרתים באיחוד האירופי. ההעברה מוצפנת ב-HTTPS/TLS.',
-      'הגישה מוגבלת ברמת מסד הנתונים כך שכל חשבון רואה אך ורק את נתוני המשפחה שלו.',
+      'הגישה מוגבלת ברמת מסד הנתונים: חשבון הורה רואה את נתוני המשפחה שלו, וחשבון ילד/ה רואה רק את הפרופיל והנתונים של אותו ילד/ה.',
       'עותק מקומי של הנתונים נשמר בדפדפן שלכם כדי לאפשר עבודה גם ללא חיבור לאינטרנט.',
     ],
   },
@@ -52,7 +53,7 @@ export const PRIVACY_HE: Section[] = [
   {
     heading: 'הגנה על מידע של ילדים',
     body: [
-      'לילדים אין חשבון משתמש. כל פרופיל ילד שייך לחשבון הורה ונשלט על ידו בלבד.',
+      'הורה יכול ליצור התחברות אופציונלית לילד/ה, לעדכן אותה או לבטל אותה. היא מאפשרת גישה רק לנתוני אותו ילד/ה.',
       'אין באפליקציה צ׳אט, חיפוש משתמשים, פרופילים ציבוריים או כל דרך ליצור קשר עם אנשים מחוץ למשפחה.',
       'ניתן להגדיר שהתראות יציגו טקסט כללי בלבד, בלי שמות ילדים, כך שלא יופיע מידע אישי במסך נעול.',
       'אנו אוספים את המידע המינימלי הנדרש להפעלת האפליקציה.',
@@ -62,7 +63,7 @@ export const PRIVACY_HE: Section[] = [
     heading: 'כמה זמן המידע נשמר',
     body: [
       'המידע נשמר כל עוד חשבון המשפחה קיים. מחיקת פרופיל ילד מוחקת מיד את כל המשימות, הביצועים והיומן שלו.',
-      'מחיקת חשבון המשפחה מוחקת לצמיתות את כל נתוני המשפחה וכל חשבונות ההורים — זו מחיקה אמיתית, לא השבתה.',
+      'מחיקת חשבון המשפחה מוחקת לצמיתות את כל נתוני המשפחה ואת חשבונות ההורים והילדים המקושרים — זו מחיקה אמיתית, לא השבתה.',
     ],
   },
   {
@@ -91,6 +92,7 @@ export const PRIVACY_EN: Section[] = [
     heading: 'What we collect',
     body: [
       'Parent account: email address and a hashed password (handled by Supabase Auth), plus the display name you enter.',
+      "Optional child login: when a parent enables it, we store the child's email address and a hashed password handled by Supabase Auth.",
       'Family details: family name, time zone, reminder times and notification preferences.',
       'Child profiles: a first name only (whatever you choose to type), an emoji and a colour. We do not collect birth dates, photos, location, contacts, microphone or camera.',
       'Content you create: tasks, routines, checklists, rewards, completion marks and journal entries (a mood and free text).',
@@ -108,7 +110,7 @@ export const PRIVACY_EN: Section[] = [
     heading: 'Where it is stored',
     body: [
       'In Supabase (a PostgreSQL database) on servers in the European Union. All transfer is encrypted with HTTPS/TLS.',
-      'Database-level access rules ensure each account can only read its own family data.',
+      'Database-level access rules let a parent account read its family data and restrict a child account to that child’s own profile and data.',
       'A local copy is cached in your browser so the app keeps working offline.',
     ],
   },
@@ -123,7 +125,7 @@ export const PRIVACY_EN: Section[] = [
   {
     heading: 'Protecting children',
     body: [
-      'Children do not have user accounts. Every child profile belongs to, and is controlled by, a parent account.',
+      'A parent can optionally create, update or revoke a child login. It can access only that child’s own data.',
       'There is no chat, no user search, no public profile and no way to contact anyone outside the family.',
       'You can set notifications to show generic text without children’s names, so nothing personal appears on a lock screen.',
       'We collect the minimum data needed to run the app.',
@@ -133,7 +135,7 @@ export const PRIVACY_EN: Section[] = [
     heading: 'How long we keep it',
     body: [
       'For as long as the family account exists. Deleting a child profile immediately erases their tasks, completions and journal.',
-      'Deleting the family account permanently erases all family data and all parent accounts — a real deletion, not a deactivation.',
+      'Deleting the family account permanently erases all family data and all linked parent and child accounts — a real deletion, not a deactivation.',
     ],
   },
   {
