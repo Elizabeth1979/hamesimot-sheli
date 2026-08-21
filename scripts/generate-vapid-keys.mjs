@@ -17,5 +17,12 @@ const jwk = await webcrypto.subtle.exportKey('jwk', pair.privateKey)
 
 console.log('VITE_VAPID_PUBLIC_KEY=%s', publicKey)
 console.log('VAPID_PRIVATE_KEY=%s', jwk.d)
-console.log('\nSet the private key as a Supabase secret:')
-console.log('  supabase secrets set VAPID_PRIVATE_KEY=%s VAPID_SUBJECT=mailto:you@example.com', jwk.d)
+
+// The Edge Functions read all three of VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY and
+// VAPID_SUBJECT. Omitting the public key leaves push silently broken, so set all three.
+console.log('\nSet the Edge Function secrets:')
+console.log(
+  '  supabase secrets set VAPID_PRIVATE_KEY=%s VAPID_PUBLIC_KEY=%s VAPID_SUBJECT=mailto:you@example.com',
+  jwk.d,
+  publicKey,
+)
