@@ -37,6 +37,29 @@ order**, one at a time:
 If you have the Supabase CLI linked to the project, `supabase db push` does the
 same thing in one step.
 
+### After a PR that adds a migration or an Edge Function
+
+**Vercel redeploys on merge. Supabase does not.** A merged PR that adds a migration or an
+Edge Function is only half-live until you run these by hand — nothing errors in the
+meantime, the feature just silently does not work.
+
+```bash
+supabase link --project-ref <PROJECT_REF>
+supabase db push
+supabase functions deploy <name>
+```
+
+This is not hypothetical: PRs #2 and #3 shipped child email login and magic-link login to
+production on 2026-08-15 with their migration unapplied and `manage-child-login` not
+deployed, and it went unnoticed until 2026-08-21.
+
+To check what production actually has:
+
+```bash
+supabase migration list --linked      # local files vs applied versions
+supabase functions list               # deployed functions
+```
+
 ### Deploy the Edge Functions
 
 ```bash
