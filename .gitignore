@@ -30,3 +30,7 @@ dist-ssr
 
 # Vite PWA dev output
 dev-dist
+
+# Supabase CLI local state (created by `supabase start` / `db reset`)
+supabase/.branches
+supabase/.temp
