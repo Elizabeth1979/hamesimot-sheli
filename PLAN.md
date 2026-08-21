@@ -103,9 +103,11 @@ erroring. PRs #2 and #3 did exactly that on 2026-08-15.
 - [x] **W7.** Find and fix the `net_http_post` bug; prove it locally
 - [x] **W8.** Port the original spec to `docs/original-spec.md`
 - [x] **W9.** Document the deploy gap in `docs/deployment.md`
-- [ ] **W10.** `supabase login` ← **owner action; blocks W11–W12**
-- [ ] **W11.** `supabase db push` — applies both pending migrations
-- [ ] **W12.** `supabase functions deploy manage-child-login`
+- [x] **W10.** `supabase login`
+- [x] **W11.** `supabase db push` — both migrations applied; ledger repaired first
+      (the `0001`–`0007` files had been applied via the SQL editor, so the ledger
+      recorded generated timestamps that matched no filename)
+- [x] **W12.** `supabase functions deploy manage-child-login` — ACTIVE
 - [ ] **W13.** Push the branch / open a PR (needs the owner's go-ahead)
 
 ### ▷ Next session(s)
@@ -114,7 +116,7 @@ erroring. PRs #2 and #3 did exactly that on 2026-08-15.
 - [ ] **N2.** Enable leaked-password protection (one toggle)
 - [ ] **N3.** Review `accept_invite` — `SECURITY DEFINER`, callable by `authenticated`,
       and it is the family-joining door
-- [ ] **N4.** Configure push properly (`docs/push-setup.md`) — **only after W11**
+- [ ] **N4.** Configure push properly (`docs/push-setup.md`) — now safe, W11 is done
 - [ ] **N5.** Verify push end-to-end on a real device; iOS needs Add to Home Screen first
 - [ ] **N6.** Delete the 5 merged branches on GitHub
 - [ ] **N7.** Delete `~/Desktop/kids-tasks` (archived and pushed; safe to remove)
